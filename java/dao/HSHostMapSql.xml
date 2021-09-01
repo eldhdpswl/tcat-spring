@@ -1,0 +1,242 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+   <!DOCTYPE mapper
+             PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+             "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+             
+   <mapper namespace="spring.project.tcat.persistence.HSHostDAO">
+   		<select id="MonthMusicalCnt" parameterType="java.util.Map" resultType="int">
+   		<![CDATA[
+   		select count(*) 
+			from 
+				(select c.category,c.mDev,t.ticet_buyDate
+				from Ticketing t,performanceInfo p,category c
+				where t.per_id=p.per_id and p.cateNum=c.cateNum and c.mDev='뮤지컬')
+			where ticet_buyDate between #{monS} and #{monE}
+   		]]>
+   		</select>
+   		
+   		<select id="MonthConcertCnt" parameterType="java.util.Map" resultType="int">
+   		<![CDATA[
+   		select count(*) 
+			from 
+				(select c.category,c.mDev,t.ticet_buyDate
+				from Ticketing t,performanceInfo p,category c
+				where t.per_id=p.per_id and p.cateNum=c.cateNum and c.mDev='콘서트')
+			where ticet_buyDate between #{monS} and #{monE}
+   		]]>
+   		</select>
+   		
+   		<select id="MonthTheatricalCnt" parameterType="java.util.Map" resultType="int">
+   		<![CDATA[
+   		select count(*) 
+			from 
+				(select c.category,c.mDev,t.ticet_buyDate
+				from Ticketing t,performanceInfo p,category c
+				where t.per_id=p.per_id and p.cateNum=c.cateNum and c.mDev='연극')
+			where ticet_buyDate between #{monS} and #{monE}
+   		]]>
+   		</select>
+   		
+   		<select id="MonthClassicCnt" parameterType="java.util.Map" resultType="int">
+   		<![CDATA[
+   		select count(*) 
+			from 
+				(select c.category,c.mDev,t.ticet_buyDate
+				from Ticketing t,performanceInfo p,category c
+				where t.per_id=p.per_id and p.cateNum=c.cateNum and c.mDev='클래식')
+			where ticet_buyDate between #{monS} and #{monE}
+   		]]>
+   		</select>
+   		
+   		<select id="MonthDancingCnt" parameterType="java.util.Map" resultType="int">
+   		<![CDATA[
+   		select count(*) 
+			from 
+				(select c.category,c.mDev,t.ticet_buyDate
+				from Ticketing t,performanceInfo p,category c
+				where t.per_id=p.per_id and p.cateNum=c.cateNum and c.mDev='무용')
+			where ticet_buyDate between #{monS} and #{monE}
+   		]]>
+   		</select>
+   		
+   		<select id="MonthStoreCnt" parameterType="java.util.Map" resultType="int">
+   		<![CDATA[
+			select count(*) 
+			from DiscBuy
+			where disc_buyDate between #{monS} and #{monE}
+   		]]>
+   		</select>
+   		<!-- day -->
+   		
+   		   		<select id="dayMusicalCnt" parameterType="java.util.Map" resultType="int">
+   		<![CDATA[
+   		select count(*) 
+			from 
+				(select c.category,c.mDev,t.ticet_buyDate
+				from Ticketing t,performanceInfo p,category c
+				where t.per_id=p.per_id and p.cateNum=c.cateNum and c.mDev='뮤지컬')
+			where ticet_buyDate between #{dayS} and #{dayE}
+   		]]>
+   		</select>
+   		
+   		   		<select id="dayConcertCnt" parameterType="java.util.Map" resultType="int">
+   		<![CDATA[
+   		select count(*) 
+			from 
+				(select c.category,c.mDev,t.ticet_buyDate
+				from Ticketing t,performanceInfo p,category c
+				where t.per_id=p.per_id and p.cateNum=c.cateNum and c.mDev='콘서트')
+			where ticet_buyDate between #{dayS} and #{dayE}
+   		]]>
+   		</select>
+   		
+   		   		<select id="dayTheatricalCnt" parameterType="java.util.Map" resultType="int">
+   		<![CDATA[
+   		select count(*) 
+			from 
+				(select c.category,c.mDev,t.ticet_buyDate
+				from Ticketing t,performanceInfo p,category c
+				where t.per_id=p.per_id and p.cateNum=c.cateNum and c.mDev='연극')
+			where ticet_buyDate between #{dayS} and #{dayE}
+   		]]>
+   		</select>
+   		
+   		   		<select id="dayClassicCnt" parameterType="java.util.Map" resultType="int">
+   		<![CDATA[
+   		select count(*) 
+			from 
+				(select c.category,c.mDev,t.ticet_buyDate
+				from Ticketing t,performanceInfo p,category c
+				where t.per_id=p.per_id and p.cateNum=c.cateNum and c.mDev='클래식')
+			where ticet_buyDate between #{dayS} and #{dayE}
+   		]]>
+   		</select>
+   		
+   		   		<select id="dayDancingCnt" parameterType="java.util.Map" resultType="int">
+   		<![CDATA[
+   		select count(*) 
+			from 
+				(select c.category,c.mDev,t.ticet_buyDate
+				from Ticketing t,performanceInfo p,category c
+				where t.per_id=p.per_id and p.cateNum=c.cateNum and c.mDev='무용')
+			where ticet_buyDate between #{dayS} and #{dayE}
+   		]]>
+   		</select>
+   		
+   		   		<select id="dayStoreCnt" parameterType="java.util.Map" resultType="int">
+   		<![CDATA[
+   			select count(*) 
+			from DiscBuy
+			where disc_buyDate between #{dayS} and #{dayE}
+   		]]>
+   		</select>
+   		
+   		
+   		<select id="LevelMusicalCnt" parameterType="String" resultType="int">
+   			<![CDATA[
+   			select count(*) from(
+			select m.rating,t.ticet_date,c.mDev
+			from Ticketing t,member m,performanceInfo p,category c
+			where t.member_id=m.member_id and t.per_id=p.per_id and p.cateNum=c.cateNum
+			)
+			where mDev='뮤지컬' and rating=#{rating}
+			]]>
+   		</select>
+   		
+   		 <select id="LevelConcertCnt" parameterType="String" resultType="int">
+   			<![CDATA[
+   			select count(*) from(
+			select m.rating,t.ticet_date,c.mDev
+			from Ticketing t,member m,performanceInfo p,category c
+			where t.member_id=m.member_id and t.per_id=p.per_id and p.cateNum=c.cateNum
+			)
+			where mDev='콘서트' and rating=#{rating}
+			]]>
+   		</select>
+   		
+   		   		<select id="LevelTheatricalCnt" parameterType="String" resultType="int">
+   			<![CDATA[
+   			select count(*) from(
+			select m.rating,t.ticet_date,c.mDev
+			from Ticketing t,member m,performanceInfo p,category c
+			where t.member_id=m.member_id and t.per_id=p.per_id and p.cateNum=c.cateNum
+			)
+			where mDev='연극' and rating=#{rating}
+			]]>
+   		</select>
+   		
+   		<select id="LevelClassicCnt" parameterType="String" resultType="int">
+   			<![CDATA[
+   			select count(*) from(
+			select m.rating,t.ticet_date,c.mDev
+			from Ticketing t,member m,performanceInfo p,category c
+			where t.member_id=m.member_id and t.per_id=p.per_id and p.cateNum=c.cateNum
+			)
+			where mDev='클래식' and rating=#{rating}
+			]]>
+   		</select>
+   		
+   		<select id="LevelDancingCnt" parameterType="String" resultType="int">
+   			<![CDATA[
+   			select count(*) from(
+			select m.rating,t.ticet_date,c.mDev
+			from Ticketing t,member m,performanceInfo p,category c
+			where t.member_id=m.member_id and t.per_id=p.per_id and p.cateNum=c.cateNum
+			)
+			where mDev='무용/발레' and rating=#{rating}
+			]]>
+   		</select>
+   		
+   		<select id="LevelStoreCnt" parameterType="String" resultType="int">
+   			<![CDATA[
+			select COUNT(*) from(
+			select m.rating
+			from DiscBuy d,member m
+			where d.member_id=m.member_id
+			)where rating=#{rating}
+			]]>
+   		</select>
+   		
+   		<select id="placeMusicalCnt" parameterType="String" resultType="int">
+	   		select count(*) from(
+			select pl.province,c.mDev
+			from Ticketing t,performanceInfo p,hallInfo h,place pl,category c
+			where t.per_id=p.per_id and p.cateNum=c.cateNum and p.hall_id=h.hall_id and h.place_num=pl.place_num)
+			where province=#{place} and mDev='뮤지컬'
+   		</select>
+   		
+   		<select id="placeConcertCnt" parameterType="String" resultType="int">
+	   		select count(*) from(
+			select pl.province,c.mDev
+			from Ticketing t,performanceInfo p,hallInfo h,place pl,category c
+			where t.per_id=p.per_id and p.cateNum=c.cateNum and p.hall_id=h.hall_id and h.place_num=pl.place_num)
+			where province=#{place} and mDev='콘서트'
+   		</select>
+   		
+   		<select id="placeTheatricalCnt" parameterType="String" resultType="int">
+	   		select count(*) from(
+			select pl.province,c.mDev
+			from Ticketing t,performanceInfo p,hallInfo h,place pl,category c
+			where t.per_id=p.per_id and p.cateNum=c.cateNum and p.hall_id=h.hall_id and h.place_num=pl.place_num)
+			where province=#{place} and mDev='연극'
+   		</select>
+   		
+   		<select id="placeClassicCnt" parameterType="String" resultType="int">
+	   		select count(*) from(
+			select pl.province,c.mDev
+			from Ticketing t,performanceInfo p,hallInfo h,place pl,category c
+			where t.per_id=p.per_id and p.cateNum=c.cateNum and p.hall_id=h.hall_id and h.place_num=pl.place_num)
+			where province=#{place} and mDev='클래식'
+   		</select>
+   		
+   		<select id="placeDancingCnt" parameterType="String" resultType="int">
+	   		select count(*) from(
+			select pl.province,c.mDev
+			from Ticketing t,performanceInfo p,hallInfo h,place pl,category c
+			where t.per_id=p.per_id and p.cateNum=c.cateNum and p.hall_id=h.hall_id and h.place_num=pl.place_num)
+			where province=#{place} and mDev='무용/발레'
+   		</select>
+   		
+
+   </mapper>

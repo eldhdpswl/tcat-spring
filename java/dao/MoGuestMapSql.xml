@@ -1,0 +1,216 @@
+<?xml version="1.0" encoding="UTF-8"?>
+   <!DOCTYPE mapper
+             PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+             "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+             
+   <mapper namespace="spring.project.tcat.persistence.MoGuestDAO">
+   		<!-- 핫리스트 가져오기 -->
+   		<select id="hotList" parameterType="String" resultType="spring.project.tcat.VO.TcatPerformanceVO">   			
+			SELECT pb.per_id per_id,
+			            pb.perf_title perf_title,
+			            pb.perf_Image perf_Image,
+			            pb.startDate startDate,
+			            pb.endDate endDate,
+			            h.hall_name hall_name,
+			            pb.movie_url movie_url
+			FROM  (select p.per_id per_id,
+			            p.perf_title perf_title,
+			            p.perf_Image perf_Image,
+			            p.startDate startDate,
+			            p.endDate endDate,
+			            c.cateNum cateNum,
+			            c.sDev sDev,
+                        p.hall_id hall_id,
+			            p.movie_url movie_url,
+			            p.per_step per_step
+			            from performanceInfo p join category c ON p.cateNum = c.cateNum WHERE mDev=#{_parameter} AND per_step=2) pb JOIN hallInfo h ON pb.hall_id=h.hall_id
+   		</select>
+   <!-- 좌석정보 가져오기 -->
+   		<select id="ticketSeat" parameterType="int" resultType="spring.project.tcat.VO.TcatPerformanceVO">
+			<![CDATA[select 
+					    p.per_id per_id,p.per_step per_step,p.remain_round remain_round,
+					    p.VIP_seatPrice VIP_seatPrice,p.R_seatPrice R_seatPrice,
+					    p.S_seatPrice S_seatPrice,p.A_seatPrice A_seatPrice,p.B_seatPrice B_seatPrice,
+					    h.hall_id hall_id,h.VIP_seat VIP_seat,
+					    h.R_seat R_seat,h.S_seat S_seat,h.A_seat A_seat,h.B_seat B_seat,h.seat_line seat_line 
+					    from performanceinfo p join hallinfo h on p.hall_id=h.hall_id  where per_step != 4
+					      AND p.per_id=#{_parameter} ]]>
+   		</select>
+   		
+   		<!-- 좌석 예매정보 가져오기 -->
+   		<select id="ticketPerformanceSeat" parameterType="java.util.Map" resultType="spring.project.tcat.VO.TcatPerformanceVO" >
+   			<![CDATA[select 
+				t.per_id per_id,t.round round,t.ticet_date ticet_date,t.seat_type seat_type,
+				t.seat_num seat_num,t.ticket_step ticket_step,p.per_step per_step,
+				p.hall_id hall_id  
+				 from performanceinfo p join ticketing t on p.per_id=t.per_id
+				 where per_step != 4 AND ticket_step != 7 
+				  AND t.per_id=#{per_id} AND round = #{round} AND ticet_date=#{ticet_date} ]]>
+   		</select>
+   
+   
+   <!-- 사진게시판 게시글 숫자 가져오기 -->
+   		<select id="photoBoarderListCnt" parameterType="int" resultType="int">
+   			select count(*) from Notice WHERE
+   			 notice_div=#{_parameter}
+   		</select>
+   
+   <!-- 사진게시판 게시글  -->
+   	<select id="photoBoarderList" parameterType="java.util.Map" resultType="spring.project.tcat.VO.TcatBoardVO">
+   		<![CDATA[select * from 
+		 (select notice_num,notice_title,writeDate,contents,notice_image,notice_div,member_id,rownum rNum from 
+		 (select * from notice order by notice_num desc)
+			where notice_div=#{category})  WHERE rNum>=#{start} AND rNum<=#{end} ]]>
+   	</select>
+   	
+   	<!-- 답글올리기 -->
+   	<insert id="photoBoarderCommentWrite" parameterType="spring.project.tcat.VO.TcatBoardVO">
+   		<![CDATA[INSERT INTO notice (notice_num,notice_title,writedate,contents,member_id,notice_div) 
+   		values (notice_seq.nextval,#{notice_num},sysdate,#{contents},#{member_id},#{categoryComment}) ]]>
+   	</insert>
+   
+   <!--사진게시판 답글 가져오기  -->
+   <select id="photoBoarderComment" parameterType="int" resultType="spring.project.tcat.VO.TcatBoardVO">
+   		select notice_num,notice_title,writeDate,contents,member_id from notice where notice_div=#{_parameter} order by notice_num
+   </select>
+   
+   <!-- 사진게시판 업로드 -->
+   <insert id="insertPhotoBoarder" parameterType="spring.project.tcat.VO.TcatBoardVO" >
+   		<![CDATA[INSERT INTO notice (notice_num,notice_title,writeDate,contents,notice_image,notice_div,member_id)
+   		 values(notice_seq.nextval,#{notice_title},sysdate,#{contents},#{notice_image},#{category},#{member_id})]]>
+   </insert>
+   
+   <!-- 사진게시판 삭제 -->
+   <delete id="photoBorderDelete" parameterType="int">
+   		DELETE FROM notice WHERE notice_num=#{_parameter}
+   </delete>
+   
+   <!-- 사진게시판 수정 -->
+   <update id="noMoPhotoBoarder">
+   		UPDATE notice SET notice_title=#{notice_title},contents=#{contents}
+   		<if test="notice_image!=null">
+   			,notice_image=#{notice_image}
+   		</if>
+   		where notice_num=#{notice_num}
+   </update>
+    
+     <!--  영상게시판 게시글 숫자 가져오기 -->
+   		<select id="movieBoarderListCnt" parameterType="int" resultType="int">
+   			select count(*) from Notice WHERE notice_div=#{_parameter}
+   		</select>
+   
+     <!--  영상게시판 게시글  -->
+   	<select id="movieBoarderList" parameterType="java.util.Map" resultType="spring.project.tcat.VO.TcatBoardVO">
+   		<![CDATA[select * from 
+		 (select notice_num,notice_title,writeDate,contents,notice_addfile,notice_div,member_id,rownum rNum from 
+		 (select * from notice order by notice_num desc)
+			where notice_div=#{category})  WHERE rNum>=#{start} AND rNum<=#{end} ]]>
+   	</select> 
+    
+     <!--  영상게시판 답글 가져오기  -->
+   <select id="movieBoarderComment" parameterType="int" resultType="spring.project.tcat.VO.TcatBoardVO">
+   		select notice_num,notice_title,writeDate,contents,member_id from notice where notice_div=#{_parameter} order by notice_num
+   </select>
+   
+  	<!-- 답글올리기 -->
+   	<insert id="MovieBoarderCommentWrite" parameterType="spring.project.tcat.VO.TcatBoardVO">
+   		<![CDATA[INSERT INTO notice (notice_num,notice_title,writedate,contents,member_id,notice_div) 
+   		values (notice_seq.nextval,#{notice_num},sysdate,#{contents},#{member_id},#{categoryComment}) ]]>
+   	</insert> 
+ 
+  	<!-- 영상게시판 업로드 -->
+   <insert id="insertMovieBoarder" parameterType="spring.project.tcat.VO.TcatBoardVO" >
+   		<![CDATA[INSERT INTO notice (notice_num,notice_title,writeDate,contents,notice_addfile,notice_div,member_id)
+   		 values(notice_seq.nextval,#{notice_title},sysdate,#{contents},#{notice_addfile},#{category},#{member_id})]]>
+   </insert>
+ 
+    <!-- 영상게시판 수정 -->
+   <update id="noMoMovieBoarder">
+   		UPDATE notice SET notice_title=#{notice_title},contents=#{contents}
+   			,notice_addfile=#{notice_addfile}
+   		where notice_num=#{notice_num}
+   </update>
+ 	
+ 	<!-- 메인 화면 후기 게시판 -->
+ 	<select id="mainComentBoarderList" resultType="spring.project.tcat.VO.TcatBoardVO">
+ 		<![CDATA[select member_id,writeDate,contents,rownum from (
+		select member_id,writeDate,contents from notice where notice_div=4  order by notice_num desc) where rownum<=4]]>
+ 	</select>
+ 	
+ 	<!-- 메인화면 공지 게시판 -->
+ 	<select id="mainServiceBoardList" resultType="spring.project.tcat.VO.TcatBoardVO">
+ 			<![CDATA[select notice_title,writeDate,contents,rownum from (
+select notice_title,writeDate,contents from notice where notice_div=1  order by notice_num desc) where rownum<=4]]>
+ 	</select>
+ 
+ 	<!--카테고리별 게시판 사진메뉴  -->
+ <select id="categoryPhotoList" parameterType="int" resultType="spring.project.tcat.VO.TcatBoardVO">
+ 	<![CDATA[select notice_num,notice_title,writeDate,contents,notice_image,notice_div,member_id,rownum from 
+	(select * from notice where notice_div=#{_parameter} order by notice_num desc) where rownum<=4]]>
+ </select>
+
+ 	<!--카테고리별 게시판 영상메뉴  -->
+ <select id="categoryMovieList" parameterType="int" resultType="spring.project.tcat.VO.TcatBoardVO">
+ 	<![CDATA[select notice_num,notice_title,writeDate,contents,notice_addfile,notice_div,member_id,rownum from 
+	(select * from notice where notice_div=#{_parameter} order by notice_num desc) where rownum<=4]]>
+ </select>
+ 
+ <select id="categoryListCnt" parameterType="int" resultType="int">
+ 	select count(*) from notice where notice_div=#{_parameter}
+ </select>
+ 
+<!-- 우선순위별 상품진열 갯수 -->
+ <select id="firstGradeListCnt" parameterType="String" resultType="int">
+    select count(*) from performanceinfo p join category c on p.catenum=c.catenum where c.mDev=#{_parameter} AND per_step!='4' AND per_step!='3' 
+ </select>
+ <!-- 우선순위별 상품 진열리스트  -->
+ <select id="firstGradeList" parameterType="java.util.Map" resultType="spring.project.tcat.VO.TcatPerformanceVO">
+   <![CDATA[select * from ( select 
+     per_id,perf_title,perf_Image,B_seatPrice,sDev,first_grade, rownum rNum
+      from ( select 
+        p.per_id per_id,p.perf_title perf_title,p.perf_Image perf_Image,p.B_seatPrice B_seatPrice,c.sDev sDev,p.first_grade first_grade
+         from performanceinfo p join category c on p.catenum=c.catenum where c.mDev=#{category} AND per_step!='4' AND per_step!='3' order by first_grade) )
+          where rNum>=#{start} AND rNum<=#{end}]]>
+ </select>
+ <!-- 상품순위 -->
+ <select id="performanceSaleRating" parameterType="String" resultType="spring.project.tcat.VO.TcatPerformanceVO">
+        select per_id,perf_title,rNum from
+          (select t.count count,t.per_id per_id,pc.perf_title perf_title, rownum rNum from 
+          (select c.mDev mDev,p.per_id per_id,p.perf_title perf_title  from performanceInfo p JOIN category c ON p.cateNum=c.cateNum) pc 
+          JOIN
+          (select count(per_id) count ,per_id from Ticketing
+              group by per_id  order by count desc) t  ON pc.per_id=t.per_id where pc.mDev=#{category})
+          <![CDATA[ where rNum>=1 AND rNum<=5 ]]>
+ </select>
+ 
+ <!--  스토어 핫리스트 -->
+ <select id="storeHotList" resultType="spring.project.tcat.VO.TcatDiscBuyVO">
+ 	 select * from perDisc where disc_step=2
+ </select>
+  <!--  스토어 상품순위 --> 
+ <select id="storeSaleRating" resultType="spring.project.tcat.VO.TcatDiscBuyVO">
+ 	 	<![CDATA[select * from 
+           (select disc_code,count,disc_title,rownum rNum from 
+           (select b.disc_code disc_code,b.count count,p.disc_title disc_title from 
+           (select count(disc_code) count,disc_code from discBuy group by disc_code) b 
+            JOIN perDisc p 
+            ON b.disc_code=p.disc_code  order by count desc)
+            ) WHERE rNum>=1 AND rNum<=5]]>
+ </select> 
+ <!--  스토어 우선순위별 상품진열갯수 -->  
+ <select id="firstGradeStoreListCnt" resultType="int">
+ 	 select count(*) from perDisc WHERE disc_step!='3' AND disc_step!='4' 
+ </select> 
+  <!-- 스토어 우선 순위별 상품 진열 -->
+ <select id="firstGradeStoreList" parameterType="java.util.Map" resultType="spring.project.tcat.VO.TcatDiscBuyVO">
+           	<![CDATA[ select * from 
+            (select disc_code,disc_title,disc_price,disc_image,first_grade,sDev,rownum rNum from 
+            (select p.disc_code disc_code,p.disc_title disc_title,p.disc_price disc_price,p.disc_image disc_image,p.first_grade first_grade ,c.sDev sDev from perDisc p JOIN category c ON 
+             p.cateNum=c.cateNum WHERE disc_step!='3' AND disc_step!='4' order By first_grade) ) where rNum>=#{start} AND rNum<=#{end}]]>
+ 
+ </select> 
+ 
+
+   </mapper>
+   
+   

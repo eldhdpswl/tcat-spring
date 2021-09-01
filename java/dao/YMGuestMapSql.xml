@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8"?>
+   <!DOCTYPE mapper
+             PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+             "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+             
+   <mapper namespace="spring.project.tcat.persistence.YMGuestDAO">
+   <!-- 등급관리 -->
+   <select id="mRating" resultType="int">
+		select count(*) as buy
+		from
+		Ticketing
+		where member_id=#{strId}
+	</select>
+	
+	<update id="mRatingUpdate" parameterType="java.util.Map">
+	update member
+	<if test="compare ==0">
+    	set Rating='D'			
+    </if>
+	<if test="compare ==1">
+    	set Rating='C'			
+    </if>
+    <if test="compare ==2">
+    	set Rating='B'			
+    </if>
+    <if test="compare ==3">
+    	set Rating='A'			
+    </if>
+    <if test="compare ==4">
+    	set Rating='S'			
+    </if>
+    <if test="compare ==5">
+    	set Rating='VIP'			
+    </if> 
+	 	where member_id=#{strId}
+	</update>
+	<!-- S랭크 -->
+	<select id="dayCnt" parameterType="java.util.Map" resultType="int">
+		SELECT count(*)
+		FROM 
+		member m join Ticketing t
+		on
+		m.member_id=t.member_id
+		WHERE
+		Rating='A'
+		AND ticet_date BETWEEN #{yesterday} AND #{today}
+	</select>
+	<!-- vip -->
+	<select id="dayCnt1" parameterType="java.util.Map" resultType="int">
+		SELECT count(*)
+		FROM 
+		member m join Ticketing t
+		on
+		m.member_id=t.member_id
+		WHERE
+		Rating='S'
+		AND ticet_date BETWEEN #{yesterday} AND #{today}
+	</select>
+	<!-- 이벤트 갯수 -->
+	<select id="eventCnt" resultType="int">
+		select count(*)
+		from
+		notice
+		where notice_div=5
+	</select>
+	<!-- 이벤트 -->
+	<select id="eventGuestList" resultType="spring.project.tcat.VO.TcatBoardVO">
+		<![CDATA[
+		select *
+		from(select notice_num, notice_title, contents, notice_image,notice_addfile, rownum rNum
+		from(
+			select * from Notice
+			ORDER by notice_num desc
+				)
+		where notice_div=5
+		)
+		WHERE rNum >=#{start} AND rNum <=#{end}
+		]]>
+	</select>
+	<!-- 이벤트 폼 -->
+	<select id="eventGuestForm" resultType="spring.project.tcat.VO.TcatBoardVO">
+		select * from
+		Notice
+		where notice_num=#{num}
+	</select>
+	<!-- 이벤트 삭제 -->
+	<delete id="eventDeleteCnt" parameterType="int">
+		delete notice where notice_num=#{num}
+	</delete>
+	<!-- 이벤트 수정 -->
+	<update id="eventUpdateCnt" parameterType="java.util.Map">
+		update notice set notice_title=#{title}, contents=#{content}, notice_image=#{notice_image},notice_addfile=#{notice_addfile} where notice_num=#{num}
+	</update>
+	<!-- 이벤트 등록-->
+	<insert id="eventAddCnt" parameterType="java.util.Map">
+	<![CDATA[
+		INSERT INTO Notice (notice_num, notice_title, writeDate, contents, notice_image,notice_div,notice_addfile, member_id) 
+		VALUES (Notice_SEQ.nextval,  #{notice_title},#{writeDate},#{contents},#{notice_image},5,#{notice_addfile},#{member_id})
+		]]>
+	</insert>
+   </mapper>

@@ -1,0 +1,253 @@
+<?xml version="1.0" encoding="UTF-8"?>
+	<!DOCTYPE mapper
+	          PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+	          "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+	          
+	<mapper namespace="spring.project.tcat.persistence.DKGuestDAO">
+		<!-- AND AnswersCon LIKE '0' -->
+		<!-- 글갯수구하기 -->
+		<select id="getQnaBoardCnt" resultType="int" parameterType="java.util.Map">
+			SELECT COUNT(*)
+			FROM Service 
+			WHERE NOT(service_div LIKE '1:1게시판')
+			AND AnswersCon LIKE '0'
+			<choose>
+	  			<when test="cDev==1">
+	  				AND service_title LIKE '%${keyword}%'
+	  			</when>
+	  			<when test="cDev==2">
+	  				AND service_div LIKE '%${keyword}%'
+	  			</when>
+	  			<when test="cDev==3">
+	  				AND service_num LIKE '%${keyword}%'
+	  			</when>
+	  			<when test="cDev==4">
+	  				AND member_id LIKE '%${keyword}%'
+	  			</when>
+	  			
+	  			<otherwise></otherwise>
+	  		</choose>
+		</select>
+		
+		<!-- 게시글 목록 조회 --><!-- AND AnswersCon LIKE '0' -->
+		<select id="getQnaBoardList" parameterType="java.util.Map" resultType="spring.project.tcat.VO.TcatBoardVO">
+			SELECT *
+			FROM
+				(select service_num, service_div, service_title, member_id, writeDate, AnswersStatus,
+				       QuestionCon, AnswersCon, satisfction, rownum rNum
+				from Service
+				WHERE NOT(service_div LIKE '1:1게시판')
+				AND AnswersCon LIKE '0'
+				<choose>
+		  			<when test="cDev==1">
+		  				AND service_title LIKE '%${keyword}%'
+		  			</when>
+		  			<when test="cDev==2">
+		  				AND service_div LIKE '%${keyword}%'
+		  			</when>
+		  			<when test="cDev==3">
+		  				AND service_num LIKE '%${keyword}%'
+		  			</when>
+		  			<when test="cDev==4">
+		  				AND member_id LIKE '%${keyword}%'
+		  			</when>
+	  			
+	  				<otherwise></otherwise>
+	  			</choose>
+				ORDER BY service_num DESC)
+				<![CDATA[
+					WHERE rNum >= #{start} AND rNum <= #{end}
+				]]>	
+			
+
+		</select>
+		
+		<!-- 상세페이지 -->
+		<select id="getQnaContent" parameterType="int" resultType="spring.project.tcat.VO.TcatBoardVO">
+			SELECT * FROM Service 
+			WHERE service_num = #{_parameter}
+		</select>
+		
+		<!-- 공지사항 상세페이지 -->
+		<select id="getNoticeContent" parameterType="int" resultType="spring.project.tcat.VO.TcatBoardVO">
+			SELECT * FROM Notice 
+			WHERE notice_num = #{_parameter}
+		</select>
+		
+		<!-- 댓글리스트 불러오기 -->
+		<select id="commentList" resultType="spring.project.tcat.VO.TcatBoardVO">
+			SELECT service_num, member_id, writeDate, AnswersCon FROM Service WHERE service_title=#{_parameter}
+		</select>
+		
+		<!-- 댓글달기 -->
+		<insert id="qnaCommentWrite" parameterType="java.util.Map">
+			INSERT INTO Service (service_num, service_div, service_title, member_id, 
+			                     writeDate, AnswersStatus, QuestionCon, AnswersCon, satisfction) 
+	        VALUES (Service_SEQ.nextval, #{service_div}, #{service_num}, #{login_id}, 
+	                sysdate, 2, #{QuestionCon}, #{AnsersCon}, '0')
+		
+		</insert>
+		
+		<!-- 댓글삭제 -->
+		<delete id="commentDelete" parameterType="int">
+			DELETE FROM Service WHERE service_num = #{_parameter}
+		</delete>
+		
+		
+		<!-- 1:1게시판 글갯수 구하기 -->
+		<select id="getQnaOneToOneCnt"  resultType="int" parameterType="java.util.Map">
+			SELECT COUNT(*)
+			FROM Service 
+			WHERE service_div LIKE '1:1게시판'
+			AND AnswersCon LIKE '0'
+			<if test="login_id != null">
+	     		AND member_id LIKE '${login_id}'
+	     	</if>
+			<choose>
+	  			<when test="cDev==1">
+	  				AND service_title LIKE '%${keyword}%'
+	  			</when>
+	  			<when test="cDev==2">
+	  				AND service_div LIKE '%${keyword}%'
+	  			</when>
+	  			<when test="cDev==3">
+	  				AND service_num LIKE '%${keyword}%'
+	  			</when>
+	  			<when test="cDev==4">
+	  				AND member_id LIKE '%${keyword}%'
+	  			</when>
+	  			
+	  			<otherwise></otherwise>
+	  		</choose>
+		
+		</select>
+		
+		<!-- 1:1게시판 게시글 목록조회 -->
+		<select id="getQnaOneToOneList" parameterType="java.util.Map" resultType="spring.project.tcat.VO.TcatBoardVO">
+			SELECT *
+			FROM
+				(select service_num, service_div, service_title, member_id, writeDate, AnswersStatus,
+				       QuestionCon, AnswersCon, satisfction, rownum rNum
+				from Service
+				WHERE service_div LIKE '1:1게시판'
+				AND AnswersCon LIKE '0'
+				<if test="login_id != null">
+	     			AND member_id LIKE '${login_id}'
+	     		</if>
+				<choose>
+		  			<when test="cDev==1">
+		  				AND service_title LIKE '%${keyword}%'
+		  			</when>
+		  			<when test="cDev==2">
+		  				AND service_div LIKE '%${keyword}%'
+		  			</when>
+		  			<when test="cDev==3">
+		  				AND service_num LIKE '%${keyword}%'
+		  			</when>
+		  			<when test="cDev==4">
+		  				AND member_id LIKE '%${keyword}%'
+		  			</when>
+	  			
+	  				<otherwise></otherwise>
+	  			</choose>
+				ORDER BY service_num DESC)
+				<![CDATA[
+					WHERE rNum >= #{start} AND rNum <= #{end}
+				]]>	
+			
+			
+		</select>
+		
+		<!-- Q&A게시글 작성 -->
+		<insert id="insertBoard" parameterType="java.util.Map">
+			INSERT INTO Service (service_num, service_div, service_title, member_id, 
+			                     writeDate, AnswersStatus, QuestionCon, AnswersCon, satisfction) 
+	        VALUES (Service_SEQ.nextval, #{wDev}, #{service_title}, #{member_id}, 
+	                sysdate, 1, #{QuestionCon}, 0, 0)
+
+		</insert>
+		
+		<!-- 1:1게시판 게시글 작성 -->
+		<insert id="insertBoard_one" parameterType="java.util.Map">
+			INSERT INTO Service (service_num, service_div, service_title, member_id, 
+			                     writeDate, AnswersStatus, QuestionCon, AnswersCon, satisfction) 
+	        VALUES (Service_SEQ.nextval, #{oneToOneBoard}, #{service_title}, #{member_id}, 
+	                sysdate, 1, #{QuestionCon}, 0, 0)
+
+		</insert>
+		
+		<!-- <select id="getNoticeCnt">
+			SELECT COUNT(*) FROM Notice;
+			WHERE NOT(service_div LIKE '1:1게시판')
+		</select> -->
+		
+		<!-- 공지사항 글갯수구하기 -->
+		<select id="getNoticeCnt" resultType="int" parameterType="java.util.Map">
+			SELECT COUNT(*)
+			FROM Notice 
+			WHERE notice_div=1
+			<choose>
+	  			<when test="cDev==1">
+	  				AND notice_title LIKE '%${keyword}%'
+	  			</when>
+	  			<when test="cDev==2">
+	  				AND contents LIKE '%${keyword}%'
+	  			</when>
+	  			<when test="cDev==3">
+	  				AND notice_num LIKE '%${keyword}%'
+	  			</when>
+	  			<otherwise></otherwise>
+  			</choose>
+		</select>
+		
+		<!-- 공지사항 리스트 불러오기 -->
+		<select id="getNoticeList" parameterType="java.util.Map" resultType="spring.project.tcat.VO.TcatBoardVO">
+			SELECT *
+			FROM
+				(select notice_num, notice_title, writeDate, refNum, contents, notice_image,
+				       notice_addfile, notice_div, member_id, per_id, disc_code, rownum rNum
+				from Notice
+				WHERE notice_div=1
+				<choose>
+		  			<when test="cDev==1">
+		  				AND notice_title LIKE '%${keyword}%'
+		  			</when>
+		  			<when test="cDev==2">
+		  				AND contents LIKE '%${keyword}%'
+		  			</when>
+		  			<when test="cDev==3">
+		  				AND notice_num LIKE '%${keyword}%'
+		  			</when>
+	  			
+	  				<otherwise></otherwise>
+	  			</choose>
+				ORDER BY notice_num DESC)
+				<![CDATA[
+					WHERE rNum >= #{start} AND rNum <= #{end}
+				]]>	
+		</select>
+		
+		<!-- 댓글달리면 답변상태 update -->
+		<update id="serviceUpdate" parameterType="int">
+			UPDATE Service SET AnswersStatus=2 WHERE service_num=#{_parameter} 
+		</update>
+		
+		<!-- 조회수증가 -->
+		<update id="qnaReadCnt" parameterType="int">
+			UPDATE Notice SET refNum = refNum + 1 WHERE notice_num = #{notice_num}
+		</update>
+		
+		<!-- 게시글 update -->	
+		<update id="getBoardUpdateList" parameterType="java.util.Map">
+			UPDATE Service set service_div=#{service_div}, service_title=#{service_title}, QuestionCon=#{QuestionCon} 
+			WHERE service_num=#{service_num}
+		</update>
+		
+		<!-- 게시글 삭제 -->
+		<delete id="getBoardDeleteList" parameterType="int">
+			DELETE FROM Service WHERE service_num = #{_parameter}
+		</delete>
+		
+		
+	
+	</mapper>

@@ -1,0 +1,249 @@
+<?xml version="1.0" encoding="UTF-8"?>
+   <!DOCTYPE mapper
+             PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+             "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="spring.project.tcat.persistence.TSGuestDAO">
+
+
+
+	<!-- 회원 정보 수정 -->
+	<update id="updateMember" parameterType="spring.project.tcat.VO.MemberVO">
+		update member set
+		member_pwd=#{member_pwd}, member_addr=#{member_addr},
+		member_hp=#{member_hp}, member_email=#{member_email} where
+		member_id=#{member_id}
+	</update>
+
+	<!-- 비밀번호확인 -->
+	<select id="pwdCheck" resultType="int">
+		SELECT count(*) FROM member WHERE member_id=#{strId} AND
+		member_pwd=#{strPwd}
+	</select>
+	<!-- 아이디 확인 -->
+	<select id="memberSelect" parameterType="String"
+		resultType="spring.project.tcat.VO.MemberVO">
+		select * from member where member_id=#{id}
+	</select>
+
+	<!-- 관람후기 갯수 -->
+	<select id="comment" resultType="int">
+		select count(*) 
+		from notice no, category ca, performanceInfo per 
+		where no.notice_div = 4
+		and no.per_id = per.per_id
+		and per.cateNum = ca.cateNum
+		and category = #{Hcnt}
+		<choose>
+			<when test="sDev==1">
+				AND notice_num LIKE '${keyword}'
+			</when>
+			<when test="sDev==2">
+				AND member_id LIKE '%${keyword}%'
+			</when>
+			<when test="sDev==3">
+				AND notice_title LIKE '%${keyword}%'
+			</when>
+			<when test="sDev==4">
+				AND contents LIKE '%${keyword}%'
+			</when>
+			<otherwise></otherwise>
+		</choose>
+			<if test="mDev != null">
+			AND category LIKE #{Hcnt}
+		</if>
+	</select>
+	
+	<!-- 스토어후기 갯수 -->
+	<select id="commentS" resultType="int">
+		select count(*) 
+		from notice no, category ca, perDisc perD
+		where notice_div = 4
+		and no.disc_code = perD.disc_code
+		and perD.cateNum = ca.cateNum
+		and category = #{Hcnt}
+		<choose>
+			<when test="sDev==1">
+				AND notice_num LIKE '${keyword}'
+			</when>
+			<when test="sDev==2">
+				AND member_id LIKE '%${keyword}%'
+			</when>
+			<when test="sDev==3">
+				AND notice_title LIKE '%${keyword}%'
+			</when>
+			<when test="sDev==4">
+				AND contents LIKE '%${keyword}%'
+			</when>
+			<otherwise></otherwise>
+		</choose>
+		AND category LIKE #{Hcnt}
+	</select>
+	
+	<!-- 관람후기 출력 -->
+	<select id="commentA" resultType="spring.project.tcat.VO.TcatBoardVO">
+		select *
+		from(select notice_num,perf_title, contents,member_id,writedate,ROWNUM rnum
+		from (
+		select no.notice_num,per.perf_title, no.contents,no.member_id, no.writedate
+		from notice no, performanceInfo per
+		where no.per_id LIKE per.per_id 
+		and no.notice_div LIKE 4
+		<choose>
+			<when test="sDev==1">
+				AND notice_num LIKE '${keyword}'
+			</when>
+			<when test="sDev==2">
+				AND member_id LIKE '%${keyword}%'
+			</when>
+			<when test="sDev==3">
+				AND perf_title LIKE '%${keyword}%'
+			</when>
+			<when test="sDev==4">
+				AND contents LIKE '%${keyword}%'
+			</when>
+			<otherwise></otherwise>
+		</choose>
+		order by notice_num desc
+		))
+		<![CDATA[
+		WHERE rnum >= #{start} AND rnum <= #{end}
+		]]>
+	</select>
+	
+	<!-- 스토어(상품)후기 출력 -->
+	<select id="commentB" resultType="spring.project.tcat.VO.TcatBoardVO">
+		select *
+		from(
+		select notice_num,disc_title, contents, member_id, writedate, ROWNUM rnum
+		from (
+		select no.notice_num, perD.disc_title, no.contents,no.member_id, no.writedate
+		from notice no, perDisc perD
+		where no.disc_code LIKE perD.disc_code 
+		and no.notice_div LIKE 4
+		<choose>
+			<when test="sDev==1">
+				AND notice_num LIKE '${keyword}'
+			</when>
+			<when test="sDev==2">
+				AND member_id LIKE '%${keyword}%'
+			</when>
+			<when test="sDev==3">
+				AND disc_title LIKE '%${keyword}%'
+			</when>
+			<when test="sDev==4">
+				AND contents LIKE '%${keyword}%'
+			</when>
+			<otherwise></otherwise>
+		</choose>
+		order by notice_num desc
+		))
+		<![CDATA[
+		WHERE rnum >= #{start} AND rnum <= #{end}
+		]]>
+	</select>
+
+
+
+	<!-- 관람후기(해당공연) 갯수 -->
+	<select id="selectComment" resultType="int">
+		select count(*)
+		from notice no, performanceInfo per
+		where no.notice_div = 4
+		and no.per_id = per.per_id
+		and per.perf_title =#{perf_title}
+	</select>
+
+	<!-- 관람후기 출력(해당공연) -->
+	<select id="selectCommentBoard" resultType="spring.project.tcat.VO.TcatBoardVO">
+		select *
+		from(
+		SELECT notice_num,perf_title,perf_image, contents, member_id,
+		writedate,per_id,rownum rnum
+		FROM(
+		select no.notice_num,per.perf_title,per.perf_image, no.contents,
+		no.member_id, no.writedate,per.per_id
+		from notice no, performanceInfo per
+		where no.per_id = per.per_id
+		and no.notice_div LIKE 4
+		and perf_title LIKE #{perf_title}
+		order by notice_num desc
+		))
+		<![CDATA[
+			WHERE rnum >= #{start} AND rnum <= #{end}
+		]]>
+	</select>
+
+	<!-- 관람 후기 한줄평 쓰기 -->
+	<insert id="commentWrite" parameterType="spring.project.tcat.VO.TcatBoardVO">
+		insert into
+		notice(notice_num,writedate,contents,notice_div,member_id,per_id)
+		values(Notice_SEQ.nextval,sysdate,#{contents},4,#{member_id},#{per_id})
+	</insert>
+	
+	<!-- 스토어후기(해당 상품) 갯수 -->
+	<select id="selectCommentS" resultType="int">
+		select count(*)
+		from notice no, perDisc perD
+		where no.notice_div = 4
+		and no.disc_code = perD.disc_code
+		and disc_title = #{disc_title}
+	</select>
+
+	<!-- 스토어후기 출력 (해당 상품) -->
+	<select id="selectCommentBoardS" resultType="spring.project.tcat.VO.TcatBoardVO">
+		select *
+		from(
+		SELECT notice_num,disc_title,contents, member_id, writedate,disc_code,rownum rnum
+		FROM(
+		select no.notice_num,perD.disc_title, no.contents,no.member_id, no.writedate,perD.disc_code
+		from notice no, perDisc perD
+		where no.disc_code = perD.disc_code
+		and no.notice_div LIKE 4
+		and disc_title LIKE #{disc_title}
+		order by notice_num desc
+		))
+		<![CDATA[
+			WHERE rnum >= #{start} AND rnum <= #{end}
+		]]>
+	</select>
+	
+	<!-- 상품 후기 한줄평 쓰기 -->
+	<insert id="commentWriteS" parameterType="spring.project.tcat.VO.TcatBoardVO">
+		insert into
+		notice(notice_num,writedate,contents,notice_div,member_id,disc_code)
+		values(Notice_SEQ.nextval,sysdate,#{contents},4,#{member_id},#{disc_code})
+	</insert>
+	
+	<!-- 게스트가 자기 후기 수정할 수 있게 하기 = 공연용 -->
+	<update id="commentsModify" parameterType="spring.project.tcat.VO.TcatBoardVO">
+		update notice set
+		contents = #{contents}
+		where notice_num = #{notice_num}
+	</update>
+	<!-- 게스트가 자기 후기 삭제 할 수 있게 하기 = 공연용-->
+	<delete id="commentDeldao" parameterType="int">
+		delete notice where notice_num=#{notice_num}
+	</delete>
+	
+		<!-- 게스트가 자기 후기 수정할 수 있게 하기 = 스토어 -->
+	<update id="commentsModifyS" parameterType="spring.project.tcat.VO.TcatBoardVO">
+		update notice set
+		contents = #{contents}
+		where notice_num = #{notice_num}
+	</update>
+	<!-- 게스트가 자기 후기 삭제 할 수 있게 하기 = 스토어-->
+	<delete id="commentDeldaoS" parameterType="int">
+		delete notice where notice_num=#{notice_num}
+	</delete>
+	
+	<!-- 겟 아이디 -->
+	<select id="getperfTitlePlz" parameterType="int" resultType="String">
+		select perf_title from performanceinfo where per_id=#{_parameter}
+	</select>
+	<!-- 겟 아이디 -->
+	<select id="getListdisc_title" parameterType="int" resultType="String">
+		select DISC_TITLE from perdisc where disc_code=#{_parameter}
+	</select>
+	
+</mapper>

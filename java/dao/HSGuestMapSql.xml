@@ -1,0 +1,286 @@
+<?xml version="1.0" encoding="UTF-8"?>
+   <!DOCTYPE mapper
+             PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+             "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+             
+   <mapper namespace="spring.project.tcat.persistence.HSGuestDAO">
+   		<select id="MemberIdCheack" parameterType="String" resultType="int">
+   			select count(*) from member where member_id=#{member_id}
+   		</select>
+   		
+   		<insert id="insertMember" parameterType="spring.project.tcat.VO.MemberVO">
+   			insert into member(member_id,member_pwd,member_name,member_hp,member_addr,member_email,member_gender,member_birth,point,lastDate,Rating,member_step,member_joindate)
+   						values(#{member_id},#{member_pwd},#{member_name},#{member_hp},#{member_addr},#{member_email},#{member_gender},#{member_birth},0,sysdate,'D','1',sysdate)
+   		</insert>
+   		
+   		<select id="daySearchCnt" parameterType="String" resultType="int">
+   			select count(*) from performanceInfo
+   			<if test="searchDate!=null">
+   				where #{searchDate} BETWEEN startDate and enddate
+   			</if>
+   		</select>
+   		<select id="searchDate" parameterType="String" resultType="int">
+   			select count(*) from performanceInfo
+   			where #{searchDate} BETWEEN startDate and enddate
+   		</select>
+   		
+   		<select id="daySearchList" parameterType="java.util.Map" resultType="spring.project.tcat.VO.TcatPerformanceVO">
+   			<![CDATA[
+   			select * from (
+				select per_id,perf_title,cateNum,perf_image,startdate,enddate,first_grade,per_step,remain_round,possible_age,
+				        detail_num,hall_id,vip_seatPrice,R_seatPRice,s_seatprice,a_seatprice,b_seatprice,rownum rNum
+				from performanceInfo)
+				where rNum>=#{start} and rNum<=#{end}
+   			]]>
+   			<if test="searchDate!=null">
+   				and #{searchDate} BETWEEN startDate and enddate
+   			</if>
+   			
+   		</select>
+   			<select id="searchList" parameterType="java.util.Map" resultType="spring.project.tcat.VO.TcatPerformanceVO">
+   			<![CDATA[
+   			select * from (
+				select per_id,perf_title,cateNum,perf_image,startdate,enddate,first_grade,per_step,remain_round,possible_age,
+				        detail_num,hall_id,vip_seatPrice,R_seatPRice,s_seatprice,a_seatprice,b_seatprice,rownum rNum
+				from performanceInfo
+				where  #{searchDate} BETWEEN startDate and enddate
+				)
+				where rNum>=#{start} and rNum<=#{end}
+   			]]>
+   			
+   		</select>
+   		
+   		
+   		<select id="placeCnt" parameterType="java.util.Map" resultType="int">
+   			select count(*) from(
+			select p.per_id,p.perf_title,p.cateNum,p.perf_Image,p.startDate,p.endDate,p.first_grade,p.per_step,p.remain_round,p.possible_age,p.detail_num,p.hall_id,h.hall_name,h.place_num,p.province,p.city
+			from performanceInfo p,hallInfo h,place p
+			where p.hall_id=h.hall_id and h.place_num=p.place_num)
+   			where province like '%${place}%' or city like '%${place}%'
+   		</select>
+   		
+   		<select id="placeNullCnt" resultType="int">
+   			select count(*) from performanceInfo
+   		</select>
+   		
+   		<select id="placeNullList" parameterType="java.util.Map" resultType="spring.project.tcat.VO.TcatPerformanceVO">
+   			<![CDATA[
+   			select * from(
+			select p.per_id,p.perf_title,p.cateNum,p.perf_Image,p.startDate,p.endDate,p.first_grade,p.per_step,p.remain_round,p.possible_age,p.detail_num,p.hall_id,h.hall_name,h.place_num,p.province,p.city,rownum rNum
+			from performanceInfo p,hallInfo h,place p
+			where p.hall_id=h.hall_id and h.place_num=p.place_num)
+			where rNum>=#{start} and rNum<=#{end}
+			]]>
+   		</select>
+   		<select id="placeList" parameterType="java.util.Map" resultType="spring.project.tcat.VO.TcatPerformanceVO">
+   			<![CDATA[
+   			select * from(
+			select p.per_id,p.perf_title,p.cateNum,p.perf_Image,p.startDate,p.endDate,p.first_grade,p.per_step,p.remain_round,p.possible_age,p.detail_num,p.hall_id,h.hall_name,h.place_num,p.province,p.city,rownum rNum
+			from performanceInfo p,hallInfo h,place p
+			where p.hall_id=h.hall_id and h.place_num=p.place_num and province like '%${place}%' or city like '%${place}%')
+			where rNum>=#{start} and rNum<=#{end}
+			]]>
+   		
+   		</select>
+   		
+   		<insert id="insertCart" parameterType="java.util.Map">
+   			insert into cart(cart_num,member_id,cart_inDate,disc_code,cart_count)
+   			values(cart_SEQ.nextval,#{member_id},sysdate,#{disc_code},#{cart_count})
+   		</insert>
+   		
+   		<!-- 장바구니 리스트 가져오기 -->
+   		<select id="cartCnt" resultType="int" parameterType="String">
+   			select count(*) from cart WHERE member_id=#{member_id}
+   		</select>
+   		<select id="cartList" parameterType="java.util.Map" resultType="spring.project.tcat.VO.CartVO">
+   			<![CDATA[
+   			   			select * from (
+				select c.cart_num,c.member_id,m.member_pwd,m.member_name,m.member_hp,m.member_addr,m.member_email,m.member_gender,m.member_birth,m.point,m.lastDate,m.Rating,m.member_step,m.member_joindate,c.cart_inDate,c.disc_code,p.disc_title,p.disc_price,p.disc_image,p.disc_con,p.cateNum,ca.category,ca.mDev,ca.sDev,p.first_grade,p.disc_step,p.disc_count,c.cart_count,rownum rNum
+				from cart c,member m,perDisc p,category ca
+				where c.member_id=m.member_id and c.disc_code=p.disc_code and p.cateNum=ca.cateNum and c.member_id=#{member_id})
+			where rNum>=#{start} and rNum<=#{end}
+			]]>
+   		</select>
+   		<select id="cartListDtos" resultType="spring.project.tcat.VO.CartVO" parameterType="java.util.Map">
+   			select * from (
+				select c.cart_num,c.member_id,m.member_pwd,m.member_name,m.member_hp,m.member_addr,m.member_email,m.member_gender,m.member_birth,m.point,m.lastDate,m.Rating,m.member_step,m.member_joindate,c.cart_inDate,c.disc_code,p.disc_title,p.disc_price,p.disc_image,p.disc_con,p.cateNum,ca.category,ca.mDev,ca.sDev,p.first_grade,p.disc_step,p.disc_count,c.cart_count,rownum rNum
+				from cart c,member m,perDisc p,category ca
+				where c.member_id=m.member_id and c.disc_code=p.disc_code and p.cateNum=ca.cateNum)
+			where member_id=#{member_id}
+   		</select>
+   		
+   		<insert id="insertdelevaryInfo" parameterType="java.util.Map">
+   			insert into delevaryInfo values(delevaryInfo_SEQ.nextval,#{member_name},#{member_addr},#{member_hp})
+   		</insert>
+   		
+   		<select id="maxdel_num" resultType="int">
+   			select max(del_num) from delevaryInfo
+   		</select>
+   		
+   		<select id="payList" parameterType="int" resultType="spring.project.tcat.VO.TcatPerformanceVO">
+			select * 
+			from
+			(
+			    select p.per_id,p.perf_title,p.cateNum,p.R_seatPrice,p.VIP_seatPrice,p.S_seatPrice,p.A_seatPrice,p.B_seatPrice,c.category,c.mDev,
+			    c.sDev,pl.city,pl.postNum,pl.address,pl.province,p.perf_Image,p.startdate,p.enddate,p.hall_id,h.hall_name,h.VIP_seat,h.R_seat,
+			    h.S_seat,h.A_seat,h.B_seat,p.first_grade,p.per_step,p.remain_round,p.possible_age,rownum rNum
+			    from (select * from performanceInfo order by per_id desc) p,category c,hallInfo h,place pl
+			    where p.cateNum=c.cateNum and p.hall_id = h.hall_id and c.category='공연' and h.place_num=pl.place_num
+			)
+			where per_id=#{per_id}
+   		</select>
+   		
+   		<select id="vipCount" parameterType="java.util.Map" resultType="int">
+   			select count(*) from Ticketing where round=${round} and per_id=#{per_id} and ticet_date between #{Sdate} and #{Edate} and seat_type='VIP' and ticket_step!=7
+   		</select>
+   		<select id="rCount" parameterType="java.util.Map" resultType="int">
+   			select count(*) from Ticketing where round=${round} and per_id=#{per_id} and ticet_date between #{Sdate} and #{Edate} and seat_type='R' and ticket_step!=7
+   		</select>
+   		<select id="sCount" parameterType="java.util.Map" resultType="int">
+   			select count(*) from Ticketing where round=${round} and per_id=#{per_id} and ticet_date between #{Sdate} and #{Edate} and seat_type='S' and ticket_step!=7
+   		</select>
+   		<select id="aCount" parameterType="java.util.Map" resultType="int">
+   			select count(*) from Ticketing where round=${round} and per_id=#{per_id} and ticet_date between #{Sdate} and #{Edate} and seat_type='A' and ticket_step!=7
+   		</select>
+   		<select id="bCount" parameterType="java.util.Map" resultType="int">
+   			select count(*) from Ticketing where round=${round} and per_id=#{per_id} and ticet_date between #{Sdate} and #{Edate} and seat_type='B' and ticket_step!=7
+   		</select>
+   		
+   		<insert id="insertStorePay" parameterType="java.util.Map">
+   			insert into DiscBuy(disc_num,del_num,disc_buyDate,disc_code,member_id,disc_buyStep,sale_div,buy_count)
+   						values(DiscBuy_SEQ.nextval,#{del_num},sysdate,#{disc_code},#{member_id},1,#{Rating},#{buy_count})
+   		</insert>
+   		
+   		<delete id="cartDel" parameterType="String">
+   			delete cart where member_id=#{member_id} and disc_code=#{disc_code}
+   		</delete>
+   		
+   		<select id="getMember" parameterType="String" resultType="spring.project.tcat.VO.MemberVO">
+   			select * from member where member_id=#{member_id}
+   		</select>
+   		
+   		<select id="getSale" resultType="spring.project.tcat.VO.SaleVO">
+   			select * from sale
+   		</select>
+   		
+   		<insert id="insertdel" parameterType="java.util.Map">
+   			insert into delevaryInfo values(delevaryInfo_SEQ.nextval,#{name},#{addr},#{hp})
+   		</insert>
+   		
+   		<insert id="insertTicket" parameterType="java.util.Map">
+   			insert into Ticketing(ticket_num,member_id,per_id,ticet_date,seat_type,seat_num,
+   						sale_div,del_num,ticket_step,round)
+   						values(Ticketing_SEQ.nextval,#{member_id},#{per_id},#{ticet_date},
+   						#{seat_type},#{seat_num},#{sale_div},#{del_num},#{ticket_step},#{round})
+   		</insert>
+   		
+   		<!-- 스토어 제품정보 가져오기 -->
+   		<select id="DiscInfo" parameterType="int" resultType="spring.project.tcat.VO.TcatPerDiscVO">
+   			select * from perDisc where disc_code=#{disc_code}
+   		</select>
+   		
+   		<select id="MemInfo" parameterType="String" resultType="spring.project.tcat.VO.MemberVO">
+   			select * from member where member_id=#{member_id}
+   		</select>
+   		<select id="searchCart" parameterType="java.util.Map" resultType="int">
+   			select count(*) from cart where member_id=#{member_id} and disc_code=#{disc_code}
+   		</select>
+   		<update id="updateCart" parameterType="java.util.Map">
+   			update cart set cart_count=cart_count+#{cart_count} where disc_code=#{disc_code} and member_id=#{member_id}
+   		</update>
+   		
+   		<update id="updateCount" parameterType="java.util.Map">
+   			update perDisc set disc_count=disc_count-#{count} where disc_code=#{disc_code}
+   		</update>
+   		
+   		<update id="changeCount" parameterType="java.util.Map">
+   			update cart set cart_count=#{count} where member_id=#{member_id} and disc_code=#{disc_code}
+   		</update>
+   		
+   		<select id="cheackCartList" parameterType="java.util.Map" resultType="spring.project.tcat.VO.CartVO">
+   			select * from (
+			select c.cart_num,c.member_id,m.member_pwd,m.member_name,m.member_hp,m.member_addr,m.member_email,m.member_gender,m.member_birth,m.point,m.lastDate,m.Rating,m.member_step,m.member_joindate,c.cart_inDate,c.disc_code,p.disc_title,p.disc_price,p.disc_image,p.disc_con,p.cateNum,ca.category,ca.mDev,ca.sDev,p.first_grade,p.disc_step,p.disc_count,c.cart_count,rownum rNum
+			from cart c,member m,perDisc p,category ca
+			where c.member_id=m.member_id and c.disc_code=p.disc_code and p.cateNum=ca.cateNum)
+   			where member_id=#{member_id} and disc_code=#{disc_code}
+   		</select>
+   		
+   		<delete id="deleteCart" parameterType="java.util.Map">
+   			delete cart where member_id=#{member_id} and disc_code=#{disc_code}
+   		</delete>
+   		
+   		<update id="memberPoint" parameterType="java.util.Map">
+   			update member set point=point+#{point} where member_id=#{member_id}
+   		</update>
+   		
+   		<select id="getCount" parameterType="java.util.Map" resultType="int">
+   			select p.disc_count
+   			from cart c,perDisc p
+   			where c.disc_code=p.disc_code and c.disc_code=#{disc_code} and member_id=#{member_id}
+   		</select>
+   		
+   		<select id="searchPerCnt" parameterType="String" resultType="int">
+   			<![CDATA[
+   			select count(*) 
+   			from (select p.per_id,p.perf_title,p.cateNum,c.category,c.mDev,c.sDev,p.perf_image,p.startDate,p.endDate,p.first_grade,
+				  	p.per_step,p.remain_round,p.possible_age,p.detail_num,p.VIP_seatPrice,p.R_seatPrice,p.S_seatPrice,
+					p.A_seatPrice,p.B_seatPrice,p.hall_id,h.hall_name,h.place_num,pl.province,pl.city,pl.postNum,pl.address,p.movie_url
+				  from performanceInfo p,category c,hallInfo h,place pl
+				  where p.cateNum=c.cateNum and p.hall_id=h.hall_id and h.place_num=pl.place_num and p.per_step<3)
+			where per_id like #{search} or perf_title like #{search} or category like #{search} or
+			      mDev like #{search} or sDev like #{search} or startDate like #{search} or
+			      province like #{search} or city like #{search} or postNum like #{search} or
+			      address like #{search} or hall_name like #{search}
+			]]>
+   		</select>
+   		
+   		<select id="searchPerList" parameterType="java.util.Map" resultType="spring.project.tcat.VO.TcatPerformanceVO">
+   				<![CDATA[
+   			select * from
+   			(
+   			select per_id,perf_title,cateNum,category,mDev,sDev,perf_image,startDate,endDate,first_grade,
+				  	per_step,remain_round,possible_age,detail_num,VIP_seatPrice,R_seatPrice,S_seatPrice,
+					A_seatPrice,B_seatPrice,hall_id,hall_name,place_num,province,city,postNum,address,movie_url,rownum rNum
+   			from (select p.per_id,p.perf_title,p.cateNum,c.category,c.mDev,c.sDev,p.perf_image,p.startDate,p.endDate,p.first_grade,
+				  	p.per_step,p.remain_round,p.possible_age,p.detail_num,p.VIP_seatPrice,p.R_seatPrice,p.S_seatPrice,
+					p.A_seatPrice,p.B_seatPrice,p.hall_id,h.hall_name,h.place_num,pl.province,pl.city,pl.postNum,pl.address,p.movie_url
+				  from performanceInfo p,category c,hallInfo h,place pl
+				  where p.cateNum=c.cateNum and p.hall_id=h.hall_id and h.place_num=pl.place_num and p.per_step<3)
+			where per_id like #{search} or perf_title like #{search} or category like #{search} or
+			      mDev like #{search} or sDev like #{search} or startDate like #{search} or
+			      province like #{search} or city like #{search} or postNum like #{search} or
+			      address like #{search} or hall_name like #{search}
+			)
+			where rNum>=#{start} and rNum<=#{end}
+			]]>
+   		</select>
+   		
+   		<select id="searchStoreCnt" parameterType="String" resultType="int">
+   			select count(*) 
+   			from
+   			(
+				select p.disc_code,p.disc_title,p.disc_price,p.disc_image,p.disc_con,p.cateNum,c.category,c.mDev,c.sDev,p.first_grade,p.disc_step,p.disc_count,p.detail_num
+				from perDisc p,category c
+				where p.cateNum=c.cateNum
+			)
+			where disc_title like #{search} or disc_con like #{search} or category like #{search} or mDev like #{search} or sDev like #{search}
+   		</select>
+   		
+   		<select id="searchStoreList" parameterType="java.util.Map" resultType="spring.project.tcat.VO.TcatPerDiscVO">
+   		<![CDATA[
+		select *
+   		from
+   		(
+			select disc_code,disc_title,disc_price,disc_image,disc_con,cateNum,category,mDev,sDev,first_grade,disc_step,disc_count,detail_num,rownum rNum
+			from
+			(
+				select p.disc_code,p.disc_title,p.disc_price,p.disc_image,p.disc_con,p.cateNum,c.category,c.mDev,c.sDev,p.first_grade,p.disc_step,p.disc_count,p.detail_num
+				from perDisc p,category c
+				where p.cateNum=c.cateNum
+			)
+			where disc_title like #{search} or disc_con like #{search}  or category like #{search}  or mDev like #{search}  or sDev like #{search}
+		)
+		where rNum>=#{start} and rNum<=#{end}
+   		]]>
+   		</select>
+   </mapper>

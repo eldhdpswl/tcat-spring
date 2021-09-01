@@ -1,0 +1,806 @@
+<?xml version="1.0" encoding="UTF-8"?>
+   <!DOCTYPE mapper
+             PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+             "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="spring.project.tcat.persistence.JMHGuestDAO">
+	<!-- 이름,이메일 매칭 -->
+	<select id="id_emailChk" resultType="int">
+		SELECT COUNT(*)
+		FROM member
+		WHERE
+		<if test="member_id==null">
+			member_name LIKE '${member_name}'
+		</if>
+		<if test="member_id!=null">
+			member_id LIKE '${member_id}'
+		</if>
+		AND member_email LIKE '${member_email}'
+	</select>
+	<!--로그인 확인 -->
+	<select id="loginPro" resultType="int">
+		SELECT COUNT(*)
+		FROM member
+		WHERE member_id = #{member_id}
+		AND member_pwd = #{member_pwd}
+		AND NOT(
+		member_step = 3)
+	</select>
+	<!--호스트 로그인 확인 -->
+	<select id="host_loginPro" resultType="int">
+		SELECT COUNT(*)
+		FROM host
+		WHERE host_id = #{host_id}
+		AND host_pwd = #{host_pwd}
+	</select>
+	<!-- 접속일 변경 -->
+	<update id="updateLastDate">
+		UPDATE member
+		SET lastDate = SYSDATE, member_step = 1	<!--접속일갱신, 휴면계정 풀어주기 -->
+		WHERE member_id = #{member_id}
+	</update>
+	<!--아이디 찾기 -->
+	<select id="findIdPwd" resultType="String">
+		SELECT
+		<if test="member_id==null">
+			member_id
+		</if>
+		<if test="member_id!=null">
+			member_pwd
+		</if>
+		FROM member
+		WHERE
+		<if test="member_id==null">
+			member_name = #{member_name}
+			AND member_email =
+			#{member_email}
+		</if>
+		<if test="member_id!=null">
+			member_id = #{member_id}
+		</if>
+	</select>
+
+	<!--회원 정보 가져오기 -->
+	<select id="myPageInfo" resultType="spring.project.tcat.VO.MemberVO">
+		SELECT
+		member_id, member_pwd,
+		member_name, member_hp, member_addr, member_email,
+		member_gender,
+		member_birth, point, lastDate, Rating, member_step,
+		member_joindate
+		FROM member
+		WHERE member_id=#{member_id}
+	</select>
+
+	<!--해당 회원 스토어 구매 정보 -->
+	<select id="memDiscBuy" resultType="spring.project.tcat.VO.TcatDiscBuyVO">
+		SELECT
+		dis.disc_num, dis.del_num, dis.disc_buyDate, dis.disc_code,
+		dis.member_id, dis.disc_buyStep, dis.sale_div, s.sale_rate,
+		del.del_name, del.del_addr, del.del_hp,dis.buy_count,
+		cat.category,
+		cat.mDev,
+		cat.sDev, per.disc_title,
+		per.disc_image, per.disc_con,
+		per.cateNum,
+		per.first_grade,per.disc_price,
+		per.disc_step,
+		per.disc_count
+		FROM DiscBuy dis
+		JOIN sale
+		s ON dis.sale_div =
+		s.sale_div
+		JOIN delevaryInfo del ON dis.del_num = del.del_num
+		JOIN
+		perDisc per ON
+		dis.disc_code = per.disc_code
+		JOIN
+		category cat ON
+		per.cateNum =
+		cat.cateNum
+		<trim prefix="where" prefixOverrides="AND">
+			member_id LIKE '${member_id}'
+			<if test="disc_buyStep!=null">AND disc_buyStep LIKE '${disc_buyStep}'</if>
+		</trim>
+		ORDER BY disc_buyDate
+	</select>
+
+	<!--공연 상품 갯수 -->
+	<select id="getPerfListCnt" resultType="int">
+		SELECT COUNT(*)
+		FROM performanceInfo per
+		JOIN category cat ON
+		per.cateNum = cat.cateNum
+		JOIN hallInfo hal ON per.hall_id =
+		hal.hall_id
+		JOIN place pla ON hal.place_num = pla.place_num
+		WHERE
+		NOT(per.per_step LIKE 4)<!--판매중지 제외 -->
+		AND sDev LIKE '${sDev}'
+		<if test="place !=null">
+			AND pla.province LIKE '${place}'
+		</if>
+		ORDER BY per.${order}
+	</select>
+	<!--공연상품 리스트 -->
+	<select id="getPerfList" resultType="spring.project.tcat.VO.TcatPerformanceVO">
+		SELECT *
+		FROM (
+		SELECT per.per_id, per.perf_title, per.cateNum,
+		per.perf_Image, per.startDate, per.endDate, per.hall_id,
+		cat.category,
+		cat.mDev, cat.sDev,
+		hal.hall_name, hal.place_num, per.VIP_seatPrice,
+		per.R_seatPrice, per.S_seatPrice, per.A_seatPrice, per.B_seatPrice,
+		hal.VIP_seat, hal.R_seat, hal.S_seat, hal.A_seat, hal.B_seat,
+		hal.seat_line,
+		pla.province, pla.city, pla.postNum, pla.address, rownum
+		rNum
+		FROM performanceInfo per
+		JOIN category cat ON per.cateNum =
+		cat.cateNum
+		JOIN hallInfo hal ON per.hall_id = hal.hall_id
+		JOIN place
+		pla ON hal.place_num = pla.place_num
+		WHERE NOT(per.per_step LIKE 4)<!--판매중지 
+			제외 -->
+		AND sDev LIKE '${sDev}'
+		<if test="place !=null">
+			AND pla.province LIKE '${place}'
+		</if>
+		ORDER BY per.${order}
+		)WHERE rNum &gt;= ${start} AND rNum &lt; = ${end}
+	</select>
+
+
+	<!--스토어 상품 갯수 -->
+	<select id="getStoreListCnt" resultType="int">
+		SELECT COUNT(*)
+		FROM perDisc per
+		JOIN category cat ON per.cateNum =
+		cat.cateNum
+		WHERE NOT(per.disc_step LIKE 4)<!--판매중지 제외 -->
+		AND sDev LIKE '${sDev}'
+		ORDER BY per.${order}
+	</select>
+	<!--공연상품 리스트 -->
+	<select id="getStoreList" resultType="spring.project.tcat.VO.TcatPerDiscVO">
+		SELECT *
+		FROM (
+		SELECT per.disc_code, per.disc_title, per.disc_price,
+		per.disc_image,
+		per.disc_con, per.cateNum, per.first_grade,
+		per.disc_step,
+		per.disc_count, cat.category, cat.mDev, cat.sDev, rownum
+		rNum
+		FROM perDisc per
+		JOIN category cat ON per.cateNum = cat.cateNum
+		WHERE NOT(per.disc_step LIKE 4)<!--판매중지 제외 -->
+		AND sDev LIKE '${sDev}'
+		ORDER BY per.${order}
+		)WHERE rNum &gt;= ${start}
+		AND rNum &lt; = ${end}
+	</select>
+
+
+	<!-- 공연 상세정보 -->
+	<select id="getContent" resultType="spring.project.tcat.VO.TcatPerformanceVO">
+		SELECT per.per_id,
+		per.perf_title, per.cateNum,
+		per.perf_Image, per.startDate,
+		per.endDate, per.hall_id,
+		cat.category, cat.mDev, cat.sDev,
+		hal.hall_name, hal.place_num, per.VIP_seatPrice,
+		per.R_seatPrice,
+		per.S_seatPrice, per.A_seatPrice, per.B_seatPrice,
+		hal.VIP_seat,
+		hal.R_seat, hal.S_seat, hal.A_seat, hal.B_seat, hal.seat_line,
+		pla.province, pla.city, pla.postNum, pla.address,
+		det.detail_num,
+		det.refNum, det.per_ex, det.Detail_Image
+		FROM performanceInfo per
+		JOIN
+		category cat ON per.cateNum = cat.cateNum
+		JOIN hallInfo hal ON
+		per.hall_id = hal.hall_id
+		JOIN place pla ON hal.place_num =
+		pla.place_num
+		JOIN DetailPage det ON per.detail_num = det.detail_num
+		WHERE per_id = #{_parameter}
+	</select>
+	<!-- 연령별 선호도 -->
+	<select id="getAge" resultType="spring.project.tcat.VO.ContentFavoriteVO">
+		SELECT ages,COUNT(*) cnt
+		FROM (
+		SELECT FLOOR((100+TO_CHAR(sysdate,'yy')-SUBSTR(member_birth,1,2))/10)
+		ages
+		FROM Ticketing tic
+		JOIN member mem
+		ON tic.member_id = mem.member_id
+		WHERE tic.per_id = #{_parameter}
+		AND tic.ticket_step = 5
+		)
+		GROUP BY ages
+		ORDER BY ages
+	</select>
+	<!--성별 선호도 getGender -->
+	<select id="getGender" resultType="spring.project.tcat.VO.ContentFavoriteVO">
+		SELECT member_gender,COUNT(*)
+		cnt
+		FROM (
+		SELECT member_gender
+		FROM Ticketing tic
+		JOIN member mem
+		ON
+		tic.member_id = mem.member_id
+		WHERE
+		tic.per_id = #{_parameter}
+		AND
+		tic.ticket_step = 5
+		)
+		GROUP BY
+		member_gender
+		ORDER BY member_gender
+	</select>
+	<!--스토어 상세페이지 -->
+	<select id="getContent_store" resultType="spring.project.tcat.VO.TcatPerDiscVO">
+		SELECT per.disc_code,
+		per.disc_title, per.disc_price,
+		per.disc_image, per.disc_con,
+		per.cateNum,
+		per.first_grade, per.disc_step, per.disc_count,
+		cat.category, cat.mDev, cat.sDev,
+		det.detail_num,
+		det.refNum,
+		det.per_ex, det.Detail_Image
+		FROM perDisc per
+		JOIN category cat
+		ON
+		per.cateNum = cat.cateNum
+		JOIN DetailPage det
+		ON per.detail_num =
+		det.detail_num
+		WHERE disc_code = #{_parameter}
+	</select>
+	<select id="getAge_store" resultType="spring.project.tcat.VO.ContentFavoriteVO">
+		SELECT ages,sum(buy_count)
+		cnt
+		FROM (
+		SELECT
+		FLOOR((100+TO_CHAR(sysdate,'yy')-SUBSTR(member_birth,1,2))/10)
+		ages,buy_count
+		FROM discBuy dis
+		JOIN member mem
+		ON dis.member_id =
+		mem.member_id
+		WHERE dis.disc_code = #{_parameter}
+		AND dis.disc_buyStep =
+		5
+		)
+		GROUP BY
+		ages
+		ORDER BY ages
+	</select>
+	<select id="getGender_store" resultType="spring.project.tcat.VO.ContentFavoriteVO">
+		SELECT
+		member_gender,sum(buy_count) cnt
+		FROM (
+		SELECT member_gender, buy_count
+		FROM discBuy dis
+		JOIN member mem
+		ON dis.member_id = mem.member_id
+		WHERE
+		dis.disc_code = #{_parameter}
+		AND dis.disc_buyStep = 5
+		)
+		GROUP BY
+		member_gender
+	</select>
+	<!--조회수 업 -->
+	<update id="upHits">
+		UPDATE
+		(
+		SELECT *
+		FROM DetailPage det
+		JOIN
+		performanceInfo per
+		ON det.detail_num = per.detail_num
+		WHERE per.per_id
+		= #{_parameter}
+		)
+		SET refNum = refNum + 1
+	</update>
+	<!--위시리스트 -->
+	<select id="getWishList" resultType="spring.project.tcat.VO.WishListVO">
+		SELECT wis.wish_num, wis.wish_inDate, wis.disc_code, wis.wish_step,
+		<if test="wish_step == 1">
+			per.per_id, per.perf_title, per.cateNum, per.perf_Image,
+			per.startDate, per.endDate, per.hall_id, per.first_grade,
+			per.per_step, per.remain_round, per.possible_age,
+			hal.hall_name,
+			hal.place_num,
+			pla.province, pla.city, pla.postNum, pla.address,
+		</if>
+		<if test="wish_step == 2">
+			per.disc_title, per.disc_price, per.disc_image,
+			per.disc_con, per.disc_step, per.disc_count,
+		</if>
+		cat.category, cat.mDev, cat.sDev
+		FROM wishList wis
+		<if test="wish_step == 1">
+			JOIN performanceInfo per
+			ON wis.per_id = per.per_id
+			JOIN
+			hallInfo hal
+			ON per.hall_id = hal.hall_id
+			JOIN place pla
+			ON
+			hal.place_num = pla.place_num
+		</if>
+		<if test="wish_step == 2">
+			JOIN perDisc per
+			ON wis.disc_code = per.disc_code
+		</if>
+		JOIN category cat
+		ON per.cateNum = cat.cateNum
+		WHERE	member_id = #{member_id}
+		ORDER BY wish_inDate desc
+	</select>
+
+	<!--위시리스트 추가 -->
+	<insert id="addWishList">
+		INSERT INTO wishList(
+		wish_num, member_id , per_id,
+		wish_inDate, disc_code, wish_step
+		)
+		VALUES(
+		wishList_SEQ.NEXTVAL,
+		#{member_id},
+		#{per_id},
+		SYSDATE,
+		#{disc_code},
+		#{wish_step}
+		)
+	</insert>
+	<!--위시리스트 삭제 -->
+	<delete id="delWishList">
+		DELETE wishList
+		<if test="wish_num != null">
+			WHERE wish_num = #{wish_num}
+		</if>
+		<if test="wish_num == null">
+			WHERE member_id = #{member_id}
+			AND per_id = #{per_id}
+			AND
+			disc_code = #{disc_code}
+		</if>
+	</delete>
+	<!--위시리스트 존재여부 -->
+	<select id="getWishListIn" resultType="int">
+		SELECT COUNT(*)
+		FROM
+		wishList
+		WHERE member_id = #{member_id}
+		AND per_id = #{per_id}
+		AND
+		disc_code = #{disc_code}
+	</select>
+
+
+	<!--결제취소 -->
+	<delete id="buyCancel">
+		DELETE DiscBuy
+		WHERE disc_num = #{_parameter}
+	</delete>
+	<!--환불요청 -->
+	<update id="perfRefund">
+		UPDATE DiscBuy
+		SET disc_buyStep = 6
+		WHERE disc_num =
+		#{_parameter}
+	</update>
+	<!--교환 요청  -->
+	<update id="perfChange">
+		UPDATE DiscBuy
+		SET disc_buyStep = 8
+		WHERE disc_num = #{_parameter}
+	</update>
+
+
+	<!--티켓 배송번호 가져오기 -->
+	<select id="getDel_nums" resultType="int">
+		SELECT del_num
+		FROM(
+		SELECT
+		del_num, ticet_date
+		FROM ticketing
+		WHERE member_id = #{member_id}
+		AND
+		${date}
+		AND ticket_step &lt;= 5
+		GROUP BY del_num,ticet_date
+		)
+		ORDER BY
+		ticet_date desc
+
+	</select>
+	<!--배송번호에 해당하는 티켓정보 가져오기 -->
+	<select id="getTickets" resultType="spring.project.tcat.VO.TcatTicketingVO">
+		SELECT
+		tic.ticket_num,
+		tic.member_id, tic.per_id,
+		tic.ticet_date, tic.seat_type, tic.seat_num,
+		tic.sale_div,tic.round,
+		tic.del_num, tic.ticket_step,
+		per.perf_title,
+		per.perf_Image, per.startDate,
+		per.endDate, per.hall_id,
+		per.first_grade, per.per_step,
+		per.remain_round, per.possible_age,
+		s.sale_rate, per.R_seatPrice,
+		per.S_seatPrice, per.A_seatPrice,
+		per.B_seatPrice, per.VIP_seatPrice,
+		h.hall_name, h.place_num,
+		h.VIP_seat, h.R_seat, h.S_seat,
+		h.A_seat, h.B_seat, h.seat_line
+		FROM
+		Ticketing tic
+		JOIN performanceInfo per
+		ON
+		tic.per_id = per.per_id
+		JOIN
+		sale s
+		ON s.sale_div = tic.sale_div
+		JOIN
+		hallInfo h
+		ON h.hall_id =
+		per.hall_id
+		WHERE del_num = #{del_num}
+	</select>
+
+	<!--예매 스텝 업데이트 -->
+	<update id="ticStepUpdate">
+		UPDATE Ticketing
+		SET ticket_step = #{ticket_step}
+		WHERE del_num = #{del_num}
+	</update>
+
+
+	<!--host -->
+
+	<!--연령별 판매량 분석 -->
+	<select id="getAgeHostCount" resultType="spring.project.tcat.VO.ContentFavoriteVO">
+		SELECT ages,COUNT(*) cnt
+		FROM (
+		SELECT
+		FLOOR((100+TO_CHAR(sysdate,'yy')-SUBSTR(member_birth,1,2))/10)
+		ages
+		FROM Ticketing tic
+		JOIN member mem
+		ON tic.member_id = mem.member_id
+		WHERE tic.ticket_step = 5
+		)
+		GROUP BY ages
+		ORDER BY ages
+	</select>
+
+	<!--연령별 선호 장르 -->
+	<select id="getAgeGenre" resultType="spring.project.tcat.VO.ContentFavoriteVO">
+		SELECT ages, mDev, COUNT(*)
+		cnt
+		FROM (
+		SELECT tic.TICKET_NUM
+		,FLOOR((100+TO_CHAR(sysdate,'yy')-SUBSTR(member_birth,1,2))/10) ages,
+		mDev
+		FROM Ticketing tic
+		JOIN member mem
+		ON tic.member_id = mem.member_id
+		JOIN performanceInfo per
+		ON tic.per_id = per.per_id
+		JOIN category cat
+		On per.cateNum = cat.cateNum
+		WHERE tic.ticket_step = 5
+		)
+		GROUP BY ages, mDev
+		order by ages
+	</select>
+
+	<!--연령별 선호 작품 -->
+	<select id="getAgePerf" resultType="spring.project.tcat.VO.ContentFavoriteVO">
+		SELECT perf_title, per_id, cnt, rownum
+		FROM (
+		SELECT perf_title, per_id, COUNT(*) cnt
+		FROM(
+		SELECT per.perf_title, per.per_id,
+		FLOOR((100+TO_CHAR(SYSDATE,'yy')-SUBSTR(member_birth,1,2))/10) ages
+		FROM Ticketing tic
+		JOIN member mem
+		ON tic.member_id = mem.member_id
+		JOIN performanceInfo per
+		ON tic.per_id = per.per_id
+		WHERE tic.ticket_step = 5
+		)
+		WHERE
+		<choose>
+			<when test="_parameter==1">ages=1</when>
+			<when test="_parameter==2">ages=2</when>
+			<when test="_parameter==3">ages=3</when>
+			<when test="_parameter==4">ages=4</when>
+			<when test="_parameter==5">ages &gt;= 5</when>
+		</choose>
+		GROUP BY perf_title,per_id
+		ORDER BY cnt desc
+		)
+		WHERE rownum &gt;=1 AND rownum &lt;=5
+	</select>
+
+	<!--스토어 총 연령별 판매량 -->
+	<select id="getAgeHostCount_store" resultType="spring.project.tcat.VO.ContentFavoriteVO">
+		SELECT ages,
+		sum(buy_count) cnt
+		FROM (
+		SELECT
+		FLOOR((100+TO_CHAR(sysdate,'yy')-SUBSTR(member_birth,1,2))/10) ages,
+		buy_count
+		FROM discBuy dis
+		JOIN member mem
+		ON dis.member_id =
+		mem.member_id
+		WHERE dis.disc_buyStep = 5
+		)
+		GROUP BY ages
+		ORDER BY ages
+	</select>
+
+	<select id="getAgeGenre_store" resultType="spring.project.tcat.VO.ContentFavoriteVO">
+		SELECT ages, sDev, SUM(buy_count) cnt
+		FROM (
+		SELECT dis.disc_NUM
+		,FLOOR((100+TO_CHAR(sysdate,'yy')-SUBSTR(member_birth,1,2))/10) ages,
+		sDev, buy_count
+		FROM discBuy dis
+		JOIN member mem
+		ON dis.member_id = mem.member_id
+		JOIN perDisc per
+		ON dis.disc_code = per.disc_code
+		JOIN category cat
+		On per.cateNum = cat.cateNum
+		WHERE dis.disc_buyStep = 5
+		)
+		GROUP BY ages, sDev
+	</select>
+	<!-- 연령별 선호 스토어 상품 -->
+	<select id="getAgePerf_store" resultType="spring.project.tcat.VO.ContentFavoriteVO">
+		SELECT disc_title, disc_code, cnt, rownum
+		FROM (
+		SELECT disc_title, disc_code, SUM(buy_count) cnt
+		FROM(
+		SELECT per.disc_title, per.disc_code,buy_count,
+		FLOOR((100+TO_CHAR(SYSDATE,'yy')-SUBSTR(member_birth,1,2))/10) ages
+		FROM discBuy dis
+		JOIN member mem
+		ON dis.member_id = mem.member_id
+		JOIN perDisc per
+		ON dis.disc_code = per.disc_code
+		WHERE dis.disc_buyStep = 5
+		)
+		WHERE
+		<choose>
+			<when test="_parameter==1">ages=1</when>
+			<when test="_parameter==2">ages=2</when>
+			<when test="_parameter==3">ages=3</when>
+			<when test="_parameter==4">ages=4</when>
+			<when test="_parameter==5">ages &gt;= 5</when>
+		</choose>
+		GROUP BY disc_title,disc_code
+		ORDER BY cnt desc
+		)
+		WHERE rownum &gt;=1 AND rownum &lt;=5
+	</select>
+	
+	
+	<!-- 성별 판매량 -->
+	<select id="getGenderHostCount" resultType="spring.project.tcat.VO.ContentFavoriteVO">
+		SELECT member_gender,COUNT(*) cnt
+		FROM (
+				SELECT  member_gender
+				FROM    Ticketing tic
+				JOIN    member mem
+				ON      tic.member_id = mem.member_id
+				WHERE   tic.ticket_step = 5
+		)
+		GROUP BY member_gender
+	</select>
+	<!--성별 장르 선호도  -->
+	<select id="getGenderGenre" resultType="spring.project.tcat.VO.ContentFavoriteVO">
+		SELECT member_gender, mDev, COUNT(*) cnt
+		FROM (
+				SELECT tic.TICKET_NUM,member_gender, mDev
+				FROM Ticketing tic
+				JOIN member mem
+				ON tic.member_id = mem.member_id
+				JOIN performanceInfo per
+				ON tic.per_id = per.per_id
+				JOIN category cat
+				On per.cateNum = cat.cateNum
+				WHERE tic.ticket_step = 5
+		)
+		GROUP BY member_gender, mDev
+	</select>
+	<!--성별 작품 선호  -->
+	<select id="getGenderPerf" resultType="spring.project.tcat.VO.ContentFavoriteVO">
+	SELECT perf_title, per_id, cnt, rownum
+		FROM (
+		SELECT perf_title, per_id, COUNT(*) cnt
+		FROM(
+                SELECT per.perf_title, per.per_id,member_gender
+                FROM Ticketing tic
+                JOIN member mem
+                ON tic.member_id = mem.member_id
+                JOIN performanceInfo per
+                ON tic.per_id = per.per_id
+                WHERE tic.ticket_step = 5
+		)
+		WHERE
+		<choose>
+			<when test="_parameter==1">member_gender=1</when>
+			<when test="_parameter==2">member_gender=2</when>
+		</choose>
+		GROUP BY perf_title,per_id
+		ORDER BY cnt desc
+		)
+		WHERE rownum &gt;=1 AND rownum &lt;=5	
+	</select>
+	
+	<!--스토어 성별 총 판매량  -->
+	<select id="getGenderHostCount_store" resultType="spring.project.tcat.VO.ContentFavoriteVO">
+		SELECT member_gender,
+		SUM(buy_count) cnt
+		FROM (
+            SELECT  member_gender, buy_count
+            FROM    discBuy dis
+            JOIN    member mem
+            ON      dis.member_id = mem.member_id
+            WHERE 	dis.disc_buyStep = 5
+		)
+		GROUP BY member_gender
+		ORDER BY member_gender
+	</select>
+	
+	<!-- 성별 스토어 장르 선호 -->
+	<select id="getGenderGenre_store" resultType="spring.project.tcat.VO.ContentFavoriteVO">
+		SELECT member_gender, sDev, SUM(buy_count) cnt
+		FROM (
+                SELECT dis.disc_NUM, member_gender, sDev, buy_count
+                FROM discBuy dis
+                JOIN member mem
+                ON dis.member_id = mem.member_id
+                JOIN perDisc per
+                ON dis.disc_code = per.disc_code
+                JOIN category cat
+                On per.cateNum = cat.cateNum
+                WHERE dis.disc_buyStep = 5
+		)
+		GROUP BY member_gender, sDev
+	</select>
+	
+	<!--성별 스토어 선호 제품  -->
+	<select id="getGenderPerf_store" resultType="spring.project.tcat.VO.ContentFavoriteVO">
+		SELECT disc_title, disc_code, cnt, rownum
+		FROM (
+				SELECT disc_title, disc_code, SUM(buy_count) cnt
+				FROM(
+						SELECT per.disc_title, per.disc_code,buy_count,member_gender
+						FROM discBuy dis
+						JOIN member mem
+						ON dis.member_id = mem.member_id
+						JOIN perDisc per
+						ON dis.disc_code = per.disc_code
+						WHERE dis.disc_buyStep = 5
+				)
+				WHERE
+				<choose>
+					<when test="_parameter==1">member_gender=1</when>
+					<when test="_parameter==2">member_gender=2</when>
+				</choose>
+				GROUP BY disc_title,disc_code
+				ORDER BY cnt desc
+		)
+		WHERE rownum &gt;=1 AND rownum &lt;=5
+	</select>
+	
+		<!--\안드로이드  -->
+	
+	<!--아이디체크  -->
+	<select id="and_idChk" resultType="int">
+		SELECT COUNT(*) FROM member WHERE member_id = #{member_id}
+	</select>
+	
+	<!--로그인  -->
+	<select id="and_login" resultType="int">
+		SELECT COUNT(*) FROM member WHERE member_id = #{member_id} AND member_pwd = #{member_pwd}
+	</select>
+	<!-- 비콘 접근시 해당 공연 정보 -->
+	<select id="getAnd_perfInfo" resultType="spring.project.tcat.VO.TcatPerformanceVO">
+		SELECT 	per.per_id, per.perf_title, per.cateNum,
+				per.perf_Image, per.startDate, per.endDate, per.hall_id,
+				cat.category,
+				cat.mDev, cat.sDev,
+				hal.hall_name, hal.place_num, per.VIP_seatPrice,
+				per.R_seatPrice, per.S_seatPrice, per.A_seatPrice, per.B_seatPrice,
+				hal.VIP_seat, hal.R_seat, hal.S_seat, hal.A_seat, hal.B_seat,
+				hal.seat_line,
+				pla.province, pla.city, pla.postNum, pla.address
+		FROM 	performanceInfo per
+		JOIN 	category cat 	ON per.cateNum = cat.cateNum
+		JOIN 	hallInfo hal 	ON per.hall_id = hal.hall_id
+		JOIN 	place pla 		ON hal.place_num = pla.place_num
+		WHERE 	NOT(per.per_step LIKE 4)<!--판매중지 제외 -->
+		AND		per.hall_id = #{hall_id}
+		AND    	TO_CHAR(SYSDATE,'yy/MM/dd') &gt;=per.startDate
+		AND		TO_CHAR(SYSDATE,'yy/MM/dd') &lt;=per.endDate
+	</select>
+	
+	<!--해당 비콘 공연티켓 유무  -->
+	<select id="getAnd_ticketingNow" resultType="spring.project.tcat.VO.TcatTicketingVO">
+		SELECT	tic.ticket_num, tic.member_id, tic.per_id,
+				tic.ticet_date, tic.seat_type, tic.seat_num,
+				tic.sale_div,	tic.del_num, tic.ticket_step, tic.round,
+				per.perf_title,	per.perf_Image, <!-- per.startDate, per.endDate, --> per.hall_id,
+				per.first_grade, per.per_step, per.remain_round, per.possible_age, h.hall_name, h.place_num,
+				h.VIP_seat, h.R_seat, h.S_seat, h.A_seat, h.B_seat, h.seat_line
+		FROM	Ticketing tic
+		JOIN 	performanceInfo per ON tic.per_id = per.per_id
+		JOIN 	sale s				ON s.sale_div = tic.sale_div
+		JOIN	hallInfo h			ON h.hall_id = per.hall_id
+		WHERE 	tic.ticket_step = 5
+		AND		tic.member_id = #{member_id}
+		AND		per.hall_id = #{hall_id}
+        AND     ticet_date = TO_CHAR(SYSDATE,'yy/MM/dd')
+	</select>
+	<!-- 공연장 정보에 의한 공연정보 가져오기 -->
+	<select id="getPer_id" resultType="String">
+		SELECT 	per.per_id
+		FROM 	performanceInfo per
+		JOIN 	hallInfo hal 	ON per.hall_id = hal.hall_id
+		WHERE 	NOT(per.per_step LIKE 4)<!--판매중지 제외 -->
+		AND		per.hall_id = #{hall_id}
+		AND    	TO_CHAR(SYSDATE,'yy/MM/dd') &gt;=per.startDate
+		AND		TO_CHAR(SYSDATE,'yy/MM/dd') &lt;=per.endDate
+	</select>
+	
+	
+	<select id="searchTcat01" parameterType="String" resultType="spring.project.tcat.VO.TcatTicketingVO">
+			
+			select *
+   			from(
+				select t.ticket_num,t.member_id,p.per_id,p.perf_title,p.perf_image,p.possible_age,p.VIP_seatPrice,p.R_seatPrice,p.remain_round,
+						p.S_seatPrice,p.A_seatPrice,p.B_seatPrice,h.hall_name,h.hall_id,pl.province,pl.city,pl.postNum,pl.address,t.ticet_date,t.seat_type,
+						t.seat_num,t.round,t.del_num,t.ticet_buyDate
+				from Ticketing t,performanceInfo p,hallInfo h,place pl
+				where t.per_id=p.per_id and p.hall_id=h.hall_id and h.place_num =pl.place_num and t.ticket_step!= 6 and t.ticket_step!= 7 and t.ticket_step!= 8 
+				)
+			where member_id=#{member_id} 
+			<if test="hall_id != null">
+				AND hall_id = #{hall_id}
+				AND	ticet_date = TO_CHAR(SYSDATE,'yy/MM/dd')
+			</if>
+			<if test="hall_id == null">
+			and ticet_date &gt;= TO_CHAR(SYSDATE,'yy/MM/dd')
+			</if>
+   	</select>
+   	
+   		  	<!-- 상세페이지 -->
+	<select id="and_perf" resultType="spring.project.tcat.VO.TcatPerformanceVO" parameterType="java.util.Map">
+		
+		SELECT p.per_id,p.perf_title,p.perf_Image,p.startDate,p.endDate,p.remain_round,p.possible_age,
+		p.VIP_seatPrice,p.R_seatPrice,p.S_seatPrice
+		,p.A_seatPrice,p.B_seatPrice,h.hall_name,pl.province,pl.city,pl.postNum,pl.address,d.per_ex,d.Detail_Image
+		from performanceInfo p,hallInfo h,place pl,DetailPage d
+		where p.hall_id=h.hall_id and h.place_num = pl.place_num and p.per_id=#{per_id} and p.detail_num=d.detail_num
+		
+	</select>
+   	
+ 
+	
+</mapper>
